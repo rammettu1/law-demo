@@ -6,7 +6,7 @@ This is a demo application that transcribes voice descriptions of events and sug
 
 ## Features
 
-*   **Voice Input Recording:** Allows users to record audio directly in the browser.
+*   **Voice Input Recording:** Allows users to record audio directly in the browser using Streamlit's built-in audio input.
 *   **Speech-to-Text Transcription:** Uses the Groq API (Whisper model) to convert recorded audio into text.
 *   **IPC Section Suggestion:** Employs the Groq API (Mixtral model) to analyze the transcribed text and suggest relevant IPC sections.
 *   **Streamlit Web Interface:** Provides an interactive and user-friendly web application.
@@ -149,7 +149,7 @@ If you encounter issues running the application, particularly related to missing
 
 This script will:
 *   Display your current Python executable path and version.
-*   Check for the successful import and version of `streamlit`, `groq`, and `streamlit-audiorecorder`.
+*   Check for the successful import and version of `streamlit` and `groq`.
 *   Verify if the `GROQ_API_KEY` environment variable is set (it will only show if it's found, not its actual value for security, just the first and last 5 characters).
 *   Provide guidance if any checks fail.
 

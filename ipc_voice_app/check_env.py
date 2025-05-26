@@ -21,15 +21,6 @@ except ImportError as e:
     print(f"Groq: FAILED (Error: {e})")
     print("  Please ensure the Groq Python client is installed (e.g., 'pip install groq')")
 
-try:
-    import streamlit_audiorecorder
-    # streamlit_audiorecorder might not have __version__ or it might be simple module not package
-    # So, just checking path and import is enough.
-    print(f"Streamlit-Audiorecorder: PASSED (Path: {streamlit_audiorecorder.__path__ if hasattr(streamlit_audiorecorder, '__path__') else streamlit_audiorecorder.__file__})")
-except ImportError as e:
-    print(f"Streamlit-Audiorecorder: FAILED (Error: {e})")
-    print("  Please ensure streamlit-audiorecorder is installed (e.g., 'pip install streamlit-audiorecorder')")
-
 print("\n--- Checking Groq API Key ---")
 api_key = os.environ.get("GROQ_API_KEY")
 if api_key:

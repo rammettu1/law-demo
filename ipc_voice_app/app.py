@@ -1,7 +1,6 @@
 import streamlit as st
 import os
 import groq
-from streamlit_audiorecorder import audiorecorder
 import io
 
 # 1. Set Title
@@ -64,30 +63,40 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("1. Record Crime Description")
-    # Modify audiorecorder appearance for better UX
-    audio_bytes = audiorecorder(
-        "🎤 Start Recording", 
-        "■ Stop Recording", 
-        pause_prompt="", 
-        key="audio_recorder_main"
+    # Replace audiorecorder with st.audio_input
+    audio_bytes = st.audio_input(
+        "Record crime description (click microphone icon to start/stop):", 
+        key="audio_input_main"
     )
 
-    if audio_bytes and client and st.session_state.get("client_initialized", False):
-        st.audio(audio_bytes, format="audio/wav")
+    # This logic will now trigger when audio_bytes becomes available from st.audio_input
+    # The st.experimental_rerun() will be triggered by st.audio_input itself upon new audio.
+    # We need to manage the state transition carefully.
+
+    # Check if new audio has been uploaded and we haven't started processing it yet
+    if audio_bytes and st.session_state.get("last_processed_audio_id") != id(audio_bytes):
+        st.session_state.last_processed_audio_id = id(audio_bytes) # Mark this audio as being processed
         
         # Clear previous results and show processing state
         st.session_state.transcribed_text_content = "⏳ Transcribing audio..."
         st.session_state.ipc_codes_content = "Relevant IPC sections will appear here..."
         # Force immediate UI update for text areas
-        st.experimental_rerun() 
+        st.experimental_rerun() # This rerun will move to the processing block below
 
-    elif audio_bytes and (not client or not st.session_state.get("client_initialized", False)):
-        st.error("🔴 Groq client not initialized. Cannot process audio. Check API key and client initialization above.")
+    elif audio_bytes is None and "last_processed_audio_id" in st.session_state:
+        # Clear the marker if audio_input is cleared (e.g. user removes the uploaded file)
+        del st.session_state.last_processed_audio_id
 
-# This block handles processing if audio_bytes exist from the previous run after rerun
-if st.session_state.transcribed_text_content == "⏳ Transcribing audio..." and client and st.session_state.get("client_initialized", False) and audio_bytes:
+
+# This block handles processing if audio_bytes exist and transcription is pending
+# The audio_bytes here should be the one from the current run, which st.audio_input provides
+if st.session_state.transcribed_text_content == "⏳ Transcribing audio..." and \
+   client and st.session_state.get("client_initialized", False) and \
+   audio_bytes: # audio_bytes from st.audio_input
     try:
-        audio_buffer = io.BytesIO(audio_bytes)  # audio_bytes should be from current session state or recorder
+        # No need for st.audio(audio_bytes, format="audio/wav") as st.audio_input handles its own UI for playback
+        
+        audio_buffer = io.BytesIO(audio_bytes)
         audio_buffer.name = "filename.wav"  # Groq API expects a name attribute for the file tuple
 
         # Perform transcription

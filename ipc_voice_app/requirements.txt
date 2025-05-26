@@ -1,3 +1,2 @@
 groq==0.25.0
 streamlit==1.45.1
-streamlit-audiorecorder==0.0.6
