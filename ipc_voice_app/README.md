@@ -8,7 +8,7 @@ This is a demo application that transcribes voice descriptions of events and sug
 
 *   **Voice Input Recording:** Allows users to record audio directly in the browser using Streamlit's built-in audio input.
 *   **Speech-to-Text Transcription:** Uses the Groq API (Whisper model) to convert recorded audio into text.
-*   **IPC Section Suggestion:** Employs the Groq API (Mixtral model) to analyze the transcribed text and suggest relevant IPC sections.
+*   **IPC Section Suggestion:** Employs the Groq API (using a Large Language Model - LLM) to analyze the transcribed text and suggest relevant IPC sections.
 *   **Streamlit Web Interface:** Provides an interactive and user-friendly web application.
 
 ## Disclaimer

@@ -102,7 +102,7 @@ if st.session_state.transcribed_text_content == "⏳ Transcribing audio..." and 
         # Perform transcription
         transcription_response = client.audio.transcriptions.create(
             file=(audio_buffer.name, audio_buffer.getvalue()), # Pass buffer.getvalue()
-            model="whisper-large-v3-turbo",
+            model="whisper-large-v3", # Updated model
             response_format="json"
         )
         
@@ -140,33 +140,58 @@ if st.session_state.transcribed_text_content == "⏳ Transcribing audio..." and 
         st.session_state.ipc_codes_content = "Relevant IPC sections will appear here..." # Reset IPC
         st.rerun()
 
+# Helper function to stream response from Groq
+def stream_groq_response(api_response):
+    full_response = []
+    for chunk in api_response:
+        content = chunk.choices[0].delta.content
+        if content:
+            full_response.append(content)
+            yield content
+    # After streaming, update session state with the complete response
+    # This part needs to be called after st.write_stream has consumed the generator.
+    # A direct call here won't work as the generator is consumed by write_stream.
+    # Instead, we'll accumulate within the calling block of st.write_stream if possible,
+    # or handle the full text storage differently.
+    # For now, this generator is just for st.write_stream.
+    # We will build the full_response string in the main logic block.
+
 # This block handles IPC generation if transcription was successful from the previous run
 if st.session_state.ipc_codes_content == "⏳ Generating IPC codes..." and client and st.session_state.get("client_initialized", False):
+    st.session_state.ipc_streaming_complete = False # Flag to indicate streaming is not yet complete
     try:
         system_message = """You are a helpful legal assistant. Your task is to analyze the user's description of a crime and identify relevant sections from the Indian Penal Code (IPC). Only list the IPC section numbers and their titles (e.g., 'Section 302: Punishment for murder.'). Do not add any extra explanations, disclaimers, or introductory/concluding remarks unless they are part of the IPC section title itself. If no specific crime is described or the text is too vague, state 'No specific IPC sections applicable based on the description.'"""
         user_message = st.session_state.transcribed_text_content # Use the transcribed text
 
-        chat_completion = client.chat.completions.create(
+        # API call with streaming enabled
+        response_stream = client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_message},
             ],
-            model="mixtral-8x7b-32768",
-            temperature=0.2,
-            max_tokens=1000, # Increased max_tokens for potentially longer lists of IPCs
+            model="meta-llama/llama-4-scout-17b-16e-instruct", # Updated model
+            temperature=1, # Updated temperature
+            max_tokens=1024, # Updated max_tokens
+            stream=True # Enable streaming
         )
-        if chat_completion.choices and chat_completion.choices[0].message and chat_completion.choices[0].message.content:
-            st.session_state.ipc_codes_content = chat_completion.choices[0].message.content
-        else:
-            st.session_state.ipc_codes_content = "IPC code generation failed or returned empty."
-            st.warning("IPC code generation was not successful.")
+        
+        # Prepare for streaming display in col2
+        # The actual st.write_stream call will be in the col2 rendering block
+        # We store the stream in session state to be accessed there.
+        st.session_state.ipc_response_stream = response_stream
+        # We don't set ipc_codes_content here with the stream,
+        # it will be populated by accumulating the streamed chunks.
+        # The "Generating IPC codes..." message will be shown until the stream starts rendering.
+        
     except groq.APIError as ipc_e:
-        st.error(f"🔴 Groq API Error during IPC code generation: {ipc_e}")
+        st.error(f"🔴 Groq API Error during IPC code generation setup: {ipc_e}")
         st.session_state.ipc_codes_content = f"API Error during IPC generation: {ipc_e}"
+        st.session_state.ipc_streaming_complete = True # Mark as complete to avoid trying to stream
     except Exception as ipc_gen_e:
-        st.error(f"🔴 An unexpected error occurred during IPC code generation: {ipc_gen_e}")
+        st.error(f"🔴 An unexpected error occurred during IPC code generation setup: {ipc_gen_e}")
         st.session_state.ipc_codes_content = f"Unexpected Error during IPC generation: {ipc_gen_e}"
-    st.rerun() # Rerun to display the final IPC codes or error
+        st.session_state.ipc_streaming_complete = True # Mark as complete
+    st.rerun() # Rerun to move to the display block in col2 or show setup error
 
 
 with col2:
@@ -180,13 +205,39 @@ with col2:
     )
     st.markdown("---") # Visual separator
     st.subheader("3. Generated IPC Sections")
-    st.text_area(
-        "Generated IPC Sections", 
-        value=st.session_state.ipc_codes_content, 
-        key="ipc_codes_display_area", 
-        height=300,  # Increased height
-        disabled=True
-    )
+
+    # Display logic for IPC codes (streaming or static)
+    if st.session_state.ipc_codes_content == "⏳ Generating IPC codes..." and "ipc_response_stream" in st.session_state:
+        # If we are in the generating state and have a stream, display it
+        def stream_wrapper(stream):
+            full_response_chunks = []
+            try:
+                for chunk in stream_groq_response(st.session_state.ipc_response_stream):
+                    full_response_chunks.append(chunk)
+                    yield chunk
+                st.session_state.ipc_codes_content = "".join(full_response_chunks)
+            except Exception as e:
+                st.error(f"Error during streaming IPC codes: {e}")
+                st.session_state.ipc_codes_content = "Error occurred while streaming IPC codes."
+            finally:
+                st.session_state.ipc_streaming_complete = True
+                if "ipc_response_stream" in st.session_state: # Clean up stream from session
+                    del st.session_state.ipc_response_stream 
+                st.rerun() # Rerun to display the accumulated content statically or an error
+        
+        st.write_stream(stream_wrapper(st.session_state.ipc_response_stream))
+
+    elif not st.session_state.get("ipc_streaming_complete", True) and "ipc_response_stream" in st.session_state:
+        # This case might be hit if a rerun happens mid-stream without the "Generating..." message
+        # It's a fallback to ensure the stream is processed if UI gets into an odd state.
+        # For simplicity, we'll rely on the main path above. This could be refined if needed.
+        st.markdown(st.session_state.ipc_codes_content) # Show current accumulated or error
+    
+    else:
+        # Display static content if not generating or stream is complete/failed at setup
+        st.markdown(st.session_state.ipc_codes_content)
+
+
     st.markdown("---") # Visual separator
     # Disclaimer
     st.warning("""
