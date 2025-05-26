@@ -23,38 +23,71 @@ This is a demo application that transcribes voice descriptions of events and sug
 
 ## Setup and Installation
 
+This project requires Python and several dependencies. It's highly recommended to use a virtual environment to manage these dependencies and avoid conflicts with other Python projects.
+
 1.  **Clone the repository (or ensure files are present):**
     If you have a Git repository, clone it. Otherwise, ensure you have the `ipc_voice_app` directory with its contents.
     ```bash
     # Example if cloning:
     # git clone <repository_url>
-    # cd <repository_directory>
+    # cd <repository_directory_containing_ipc_voice_app>
     ```
 
-2.  **Create and activate a virtual environment (recommended):**
-    Open your terminal in the project's root directory (e.g., where `ipc_voice_app` directory is located).
-    ```bash
-    python3 -m venv .venv
-    ```
-    Activate the virtual environment:
-    *   On macOS and Linux:
+2.  **Choose your environment setup method:**
+
+    ### Method A: Using `venv` (Python's built-in virtual environment)
+
+    This method is suitable if you have a standard Python installation.
+
+    a.  **Create a virtual environment:**
+        Open your terminal in the project's root directory (e.g., the directory containing `ipc_voice_app`).
         ```bash
-        source .venv/bin/activate
-        ```
-    *   On Windows (Command Prompt):
-        ```bash
-        .venv\Scripts\activate
-        ```
-    *   On Windows (PowerShell):
-        ```bash
-        .venv\Scripts\Activate.ps1
+        python3 -m venv .venv 
+        # Or use 'python -m venv .venv' if 'python3' is not found
         ```
 
-3.  **Install dependencies:**
-    With your virtual environment activated, install the required packages:
-    ```bash
-    pip install -r ipc_voice_app/requirements.txt
-    ```
+    b.  **Activate the virtual environment:**
+        *   On macOS and Linux:
+            ```bash
+            source .venv/bin/activate
+            ```
+        *   On Windows (Command Prompt):
+            ```bash
+            .venv\Scripts\activate
+            ```
+        *   On Windows (PowerShell):
+            ```bash
+            .venv\Scripts\Activate.ps1
+            ```
+
+    c.  **Install dependencies:**
+        Once the virtual environment is activated, ensure you are in the directory containing `ipc_voice_app`, then install the required packages:
+        ```bash
+        pip install -r ipc_voice_app/requirements.txt
+        ```
+
+    ### Method B: Using Anaconda/Miniconda (Recommended for Conda users)
+
+    This method is suitable if you use Anaconda or Miniconda for package management.
+
+    a.  **Create a new conda environment:**
+        Open your terminal or Anaconda Prompt and run:
+        ```bash
+        conda create -n ipc_env python=3.9  # You can choose Python 3.8, 3.9, 3.10, or 3.11
+        ```
+        (Replace `ipc_env` with your preferred environment name and `3.9` with your desired Python version).
+
+    b.  **Activate the conda environment:**
+        ```bash
+        conda activate ipc_env
+        ```
+
+    c.  **Install dependencies:**
+        Once the environment is activated, navigate to the project directory (the one containing `ipc_voice_app`), and run:
+        ```bash
+        pip install -r ipc_voice_app/requirements.txt
+        ```
+        This will install all necessary packages into your active conda environment.
 
 ## Configuration
 
@@ -90,12 +123,37 @@ Choose the method appropriate for your operating system:
 1.  Ensure your `GROQ_API_KEY` environment variable is set (see Configuration section).
 2.  If you created a virtual environment, make sure it's activated.
 3.  Navigate to the directory containing the `ipc_voice_app` folder (if you are not already in it).
-4.  Run the Streamlit application using the following command:
+    Run the Streamlit application. Make sure your virtual environment (venv or conda) is activated.
 
+    You can run the application using:
     ```bash
     streamlit run ipc_voice_app/app.py
     ```
+    Alternatively, especially if you face issues with the command above or want to ensure the correct Python interpreter from your environment is used, try running it as a Python module:
+    ```bash
+    python -m streamlit run ipc_voice_app/app.py
+    ```
     This will typically open the application in your default web browser.
+
+## Troubleshooting Environment Issues
+
+If you encounter issues running the application, particularly related to missing packages or incorrect Python environment configuration, you can use the provided environment check script.
+
+1.  **Activate your virtual environment** (venv or conda) as described in the "Setup and Installation" section.
+2.  Navigate to the project's root directory (the one containing the `ipc_voice_app` folder).
+3.  Run the script using:
+    ```bash
+    python ipc_voice_app/check_env.py
+    ```
+    (Or use `python3 ipc_voice_app/check_env.py` if `python` defaults to an older version).
+
+This script will:
+*   Display your current Python executable path and version.
+*   Check for the successful import and version of `streamlit`, `groq`, and `streamlit-audiorecorder`.
+*   Verify if the `GROQ_API_KEY` environment variable is set (it will only show if it's found, not its actual value for security, just the first and last 5 characters).
+*   Provide guidance if any checks fail.
+
+If the script indicates that a package is missing or the API key is not found, please review the "Setup and Installation" and "Configuration" sections.
 
 ## Project Structure
 
@@ -103,6 +161,7 @@ Choose the method appropriate for your operating system:
 ipc_voice_app/
 ├── app.py            # Main Streamlit application logic
 ├── requirements.txt  # Python dependencies for the project
+├── check_env.py      # Script to check Python environment and dependencies
 └── README.md         # This file: Information about the project
 ```
 
