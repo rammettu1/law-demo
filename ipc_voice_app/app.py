@@ -81,7 +81,7 @@ with col1:
         st.session_state.transcribed_text_content = "⏳ Transcribing audio..."
         st.session_state.ipc_codes_content = "Relevant IPC sections will appear here..."
         # Force immediate UI update for text areas
-        st.experimental_rerun() # This rerun will move to the processing block below
+        st.rerun() # This rerun will move to the processing block below
 
     elif audio_bytes is None and "last_processed_audio_id" in st.session_state:
         # Clear the marker if audio_input is cleared (e.g. user removes the uploaded file)
@@ -118,27 +118,27 @@ if st.session_state.transcribed_text_content == "⏳ Transcribing audio..." and 
 
             if valid_transcription:
                 st.session_state.ipc_codes_content = "⏳ Generating IPC codes..."
-                st.experimental_rerun() # Rerun to show "Generating IPC codes..."
+                st.rerun() # Rerun to show "Generating IPC codes..."
             else: # Transcription was not valid for IPC generation
                  st.session_state.ipc_codes_content = "Relevant IPC sections will appear here..." # Reset IPC
-                 st.experimental_rerun()
+                 st.rerun()
 
         else: # Transcription response was empty or invalid
             st.session_state.transcribed_text_content = "Transcription failed: No text in response."
             st.warning("Transcription was not successful. Please try recording again.")
             st.session_state.ipc_codes_content = "Relevant IPC sections will appear here..." # Reset IPC
-            st.experimental_rerun()
+            st.rerun()
 
     except groq.APIError as e_transcribe:
         st.error(f"🔴 Groq API Error during transcription: {e_transcribe}")
         st.session_state.transcribed_text_content = f"API Error: {e_transcribe}"
         st.session_state.ipc_codes_content = "Relevant IPC sections will appear here..." # Reset IPC
-        st.experimental_rerun()
+        st.rerun()
     except Exception as e_general_transcribe:
         st.error(f"🔴 An unexpected error occurred during transcription: {e_general_transcribe}")
         st.session_state.transcribed_text_content = f"Unexpected Error: {e_general_transcribe}"
         st.session_state.ipc_codes_content = "Relevant IPC sections will appear here..." # Reset IPC
-        st.experimental_rerun()
+        st.rerun()
 
 # This block handles IPC generation if transcription was successful from the previous run
 if st.session_state.ipc_codes_content == "⏳ Generating IPC codes..." and client and st.session_state.get("client_initialized", False):
@@ -166,7 +166,7 @@ if st.session_state.ipc_codes_content == "⏳ Generating IPC codes..." and clien
     except Exception as ipc_gen_e:
         st.error(f"🔴 An unexpected error occurred during IPC code generation: {ipc_gen_e}")
         st.session_state.ipc_codes_content = f"Unexpected Error during IPC generation: {ipc_gen_e}"
-    st.experimental_rerun() # Rerun to display the final IPC codes or error
+    st.rerun() # Rerun to display the final IPC codes or error
 
 
 with col2:
